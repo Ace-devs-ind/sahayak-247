@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAHAYAK 24/7 — SOS</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    p  { color: #94a3b8; font-size: 14px; margin-top: 0; }
+    .sos-btn {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: #dc2626;
+      color: white;
+      border: 8px solid #7f1d1d;
+      font-size: 36px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(220, 38, 38, 0.6);
+      transition: transform 0.1s;
+    }
+    .sos-btn:active { transform: scale(0.95); }
+    #status { margin-top: 24px; font-size: 14px; color: #22c55e; }
+  </style>
+</head>
+<body>
+
+  <h1>SAHAYAK 24/7</h1>
+  <p>Tap the button to send an emergency SOS</p>
+
+  <button class="sos-btn" id="sosBtn">SOS</button>
+  <div id="status"></div>
+
+  <script type="module">
+    // Firebase imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } 
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2pufseWikuPfS25zP68DTEhFDjLM4aQ4",
+      authDomain: "resqtech-sahayak.firebaseapp.com",
+      projectId: "resqtech-sahayak",
+      storageBucket: "resqtech-sahayak.firebasestorage.app",
+      messagingSenderId: "213946051441",
+      appId: "1:213946051441:web:f8532dc039ed007ae724d0",
+      measurementId: "G-GGDB34995M"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const sosBtn = document.getElementById("sosBtn");
+    const statusDiv = document.getElementById("status");
+
+    sosBtn.addEventListener("click", async () => {
+      statusDiv.textContent = "Getting your location...";
+
+      if (!navigator.geolocation) {
+        statusDiv.textContent = "❌ Geolocation not supported on this device.";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        statusDiv.textContent = "Sending SOS...";
+
+        try {
+          await addDoc(collection(db, "sos_requests"), {
+            latitude,
+            longitude,
+            status: "pending",
+            createdAt: serverTimestamp()
+          });
+          statusDiv.textContent = "✅ SOS sent! Help is on the way.";
+        } catch (err) {
+          console.error(err);
+          statusDiv.textContent = "❌ Failed to send. Check console.";
+        }
+      }, (err) => {
+        statusDiv.textContent = "❌ Location permission denied.";
+      });
+    });
+  </script>
+
+</body>
+</html>
